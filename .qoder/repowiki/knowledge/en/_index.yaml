@@ -1,0 +1,44 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: en-US
+branch: main
+nodes_managed: true
+exported_at: "2026-10-06T14:27:38Z"
+modules:
+    "":
+        dir_name: RAT - Repo Analysis Tool (Root)
+        title: RAT - Repo Analysis Tool (Root)
+        scope:
+            - README.md
+            - .gitignore
+            - start.sh
+            - selftest.py
+        source_files: []
+        children:
+            - static_frontend
+            - web_server
+        depends_on: []
+        related_to: []
+    static_frontend:
+        dir_name: RAT Static Frontend (Single-Page Dashboard)
+        title: RAT Static Frontend (Single-Page Dashboard)
+        scope:
+            - static/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: web_server
+    web_server:
+        dir_name: RAT Web Server & Analysis Engine
+        title: RAT Web Server & Analysis Engine
+        scope:
+            - app.py
+            - db.py
+            - ingest.py
+            - metrics.py
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: static_frontend
