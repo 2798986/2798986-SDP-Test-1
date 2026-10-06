@@ -11,14 +11,23 @@ Developed with Qoder, an agentic coding tool, as permitted by the test instructi
 - Python 3.8+ (standard library only - no pip, no venv, no build step)
 - Git (for cloning and history extraction)
 
-## Run
+## Quick start (no GitHub account needed)
+
+This repository is public - anyone can clone it anonymously over HTTPS. No GitHub login,
+account, personal access token, or SSH key is required:
 
 ```
+git clone https://github.com/2798986/2798986-SDP-Test-1.git
+cd 2798986-SDP-Test-1
 python3 app.py
 ```
 
 Then open the printed URL (default `http://127.0.0.1:8000`). `./start.sh` is an equivalent
 convenience wrapper.
+
+Prefer not to use the terminal for the download? On the GitHub page choose
+**Code -> Download ZIP** and unzip it instead. Either way, `git` must be installed locally
+(see Requirements), because the app shells out to it for cloning and history extraction.
 
 ## What to try first
 
