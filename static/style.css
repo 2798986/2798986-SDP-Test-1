@@ -4,6 +4,7 @@
    (except modals/popovers), radius <= 3px. */
 
 :root {
+  color-scheme: light;
   /* palette */
   --bg: #F6F5F2;
   --surface: #FFFFFF;
@@ -14,9 +15,17 @@
   --accent: #B45309;
   --accent-hover: #92400E;
   --accent-soft: #FBF3E9;
+  --on-accent: #FFFFFF;
   --success: #15803D;
   --danger: #B91C1C;
   --danger-soft: #FDF1EF;
+  /* subtle raised tint: hovers, chips, pressed rows */
+  --hover: #FAFAF8;
+  --skeleton: #ECEBE7;
+  --selection: #F3DFC8;
+  --backdrop: rgba(22, 24, 28, 0.28);
+  --toast-bg: #16181C;
+  --toast-ink: #FFFFFF;
   /* chart series palette */
   --ser-1: #B45309; /* amber */
   --ser-2: #0F766E; /* teal */
@@ -50,6 +59,38 @@
   --shadow-pop: 0 6px 18px rgba(22, 24, 28, 0.12);
 }
 
+/* dark theme: the same drafting table at night. Warm charcoal surfaces,
+   brighter accents and series hues tuned for legibility on dark. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #121316;
+  --surface: #1B1D22;
+  --ink: #E9E7E2;
+  --muted: #9CA1A9;
+  --hairline: #2A2D33;
+  --hairline-strong: #3B3F47;
+  --accent: #E0913C;
+  --accent-hover: #F0A24B;
+  --accent-soft: #2B2117;
+  --on-accent: #14161A;
+  --success: #52B788;
+  --danger: #E57373;
+  --danger-soft: #32201F;
+  --hover: #24272D;
+  --skeleton: #26292F;
+  --selection: #4A381F;
+  --backdrop: rgba(6, 7, 9, 0.55);
+  --toast-bg: #2E323A;
+  --toast-ink: #EDEBE6;
+  --ser-1: #E0913C; /* amber */
+  --ser-2: #3FB3A7; /* teal */
+  --ser-3: #93A3B8; /* slate */
+  --ser-4: #D97757; /* rust */
+  --ser-5: #93B04C; /* olive */
+  --ser-6: #C9A24B; /* ochre */
+  --shadow-pop: 0 8px 22px rgba(0, 0, 0, 0.5);
+}
+
 /* ------------------------------------------------------------------ reset */
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
@@ -64,7 +105,7 @@ button { font: inherit; color: inherit; background: none; border: none; padding:
 input, select { font: inherit; color: inherit; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
-::selection { background: #F3DFC8; }
+::selection { background: var(--selection); }
 
 :focus { outline: none; }
 :focus-visible {
@@ -116,18 +157,26 @@ a:hover { text-decoration: underline; }
   transition: border-color var(--ease), background-color var(--ease), color var(--ease);
   white-space: nowrap;
 }
-.btn:hover { border-color: var(--ink); background: #FAFAF8; }
+.btn:hover { border-color: var(--ink); background: var(--hover); }
 .btn:active { transform: translateY(1px); }
 .btn:disabled, .btn.disabled { opacity: 0.45; pointer-events: none; }
 .btn-accent {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 .btn-accent:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 .btn-quiet { border-color: transparent; color: var(--muted); }
 .btn-quiet:hover { border-color: var(--hairline-strong); color: var(--ink); background: var(--surface); }
 .btn-sm { height: 24px; padding: 0 var(--sp-2); font-size: var(--fs-1); }
+
+/* theme toggle: shows the icon of the mode you will switch to */
+.theme-toggle { padding: 0 8px; color: var(--muted); }
+.theme-toggle:hover { color: var(--ink); }
+.theme-toggle .theme-icon { display: inline-flex; }
+.theme-toggle .sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .sun { display: inline-flex; }
+:root[data-theme="dark"] .theme-toggle .moon { display: none; }
 
 /* ------------------------------------------------------------ app layout */
 .app-body {
@@ -203,7 +252,8 @@ a:hover { text-decoration: underline; }
   white-space: nowrap;
 }
 .rail-toggle {
-  display: none;
+  display: inline-flex;
+  align-items: center;
   align-self: center;
   margin-right: var(--sp-3);
   height: 26px;
@@ -212,7 +262,9 @@ a:hover { text-decoration: underline; }
   border-radius: var(--radius);
   background: var(--surface);
   font-size: var(--fs-1);
+  transition: border-color var(--ease), color var(--ease);
 }
+.rail-toggle[aria-expanded="false"] { color: var(--accent); border-color: var(--accent); }
 
 /* -------------------------------------------------------------- content */
 .content { min-height: 320px; }
@@ -258,7 +310,7 @@ a:hover { text-decoration: underline; }
 /* skeletons */
 @keyframes rat-pulse { 50% { opacity: 0.45; } }
 .skeleton {
-  background: #ECEBE7;
+  background: var(--skeleton);
   border-radius: 2px;
   animation: rat-pulse 1.2s ease-in-out infinite;
 }
@@ -275,8 +327,8 @@ a:hover { text-decoration: underline; }
   gap: var(--sp-2);
 }
 .toast {
-  background: var(--ink);
-  color: #fff;
+  background: var(--toast-bg);
+  color: var(--toast-ink);
   font-size: var(--fs-1);
   padding: var(--sp-2) var(--sp-3);
   border-radius: var(--radius);
@@ -331,7 +383,7 @@ a:hover { text-decoration: underline; }
 }
 .menu-head { padding: 6px 12px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .repo-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 12px; text-align: left; }
-.repo-item:hover { background: #FAFAF8; }
+.repo-item:hover { background: var(--hover); }
 .repo-item[aria-current="true"] { background: var(--accent-soft); }
 .repo-item .repo-label { flex: 1; min-width: 0; }
 .repo-item .repo-label strong { display: block; font-size: var(--fs-2); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -397,7 +449,7 @@ a:hover { text-decoration: underline; }
 input[type="date"].input { padding: 0 6px; font-family: var(--mono); font-size: var(--fs-1); }
 .rail-list { display: flex; flex-direction: column; gap: 2px; max-height: 216px; overflow-y: auto; }
 .check-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 2px; cursor: pointer; font-size: var(--fs-2); }
-.check-row:hover { background: #FAFAF8; }
+.check-row:hover { background: var(--hover); }
 .check-row input { flex: none; margin: 0; accent-color: var(--accent); }
 .check-row .check-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .check-row .check-count { font-family: var(--mono); font-size: var(--fs-1); color: var(--muted); }
@@ -471,7 +523,7 @@ table.data th {
 table.data td { padding: 8px var(--sp-3); border-bottom: 1px solid var(--hairline); vertical-align: middle; }
 table.data tbody tr:last-child td { border-bottom: none; }
 table.data tbody tr.click { cursor: pointer; }
-table.data tbody tr.click:hover { background: #FAFAF8; }
+table.data tbody tr.click:hover { background: var(--hover); }
 table.data tbody tr.click:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 th.num, td.num { text-align: right; }
 th.sortable { cursor: pointer; user-select: none; }
@@ -484,7 +536,7 @@ th .sort-ind { display: inline-block; margin-left: 4px; color: var(--accent); fo
 .row-title .kind-icon { display: inline-flex; flex: none; color: var(--muted); }
 tr.click:hover .kind-icon { color: var(--accent); }
 .row-title .name { font-family: var(--mono); font-size: var(--fs-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hash-chip { display: inline-block; padding: 1px 6px; border: 1px solid var(--hairline); border-radius: 2px; background: #FAFAF8; font-family: var(--mono); font-size: var(--fs-1); }
+.hash-chip { display: inline-block; padding: 1px 6px; border: 1px solid var(--hairline); border-radius: 2px; background: var(--hover); font-family: var(--mono); font-size: var(--fs-1); }
 .subj { max-width: 60ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .own { display: flex; align-items: center; gap: 8px; min-width: 150px; }
 .own-track { flex: 1; height: 6px; border-radius: 3px; background: var(--hairline); overflow: hidden; }
@@ -515,7 +567,7 @@ tr.click:hover .kind-icon { color: var(--accent); }
 .pick-list { display: flex; flex-direction: column; border: 1px solid var(--hairline); border-radius: var(--radius); }
 .pick-row { display: flex; align-items: center; gap: var(--sp-2); padding: 6px var(--sp-3); border-bottom: 1px solid var(--hairline); font-size: var(--fs-2); cursor: pointer; }
 .pick-row:last-child { border-bottom: none; }
-.pick-row:hover { background: #FAFAF8; }
+.pick-row:hover { background: var(--hover); }
 .pick-row input { flex: none; margin: 0; accent-color: var(--accent); }
 .pick-row .pick-main { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pick-row .pick-meta { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
@@ -530,7 +582,7 @@ tr.click:hover .kind-icon { color: var(--accent); }
 .file-input-row .file-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: var(--fs-1); color: var(--muted); }
 
 /* ------------------------------------------------------ drawer / popover */
-.backdrop { position: fixed; inset: 0; z-index: 70; background: rgba(22, 24, 28, 0.28); animation: rat-fade 160ms ease; }
+.backdrop { position: fixed; inset: 0; z-index: 70; background: var(--backdrop); animation: rat-fade 160ms ease; }
 @keyframes rat-fade { from { opacity: 0; } }
 .drawer {
   position: fixed;
@@ -570,6 +622,15 @@ tr.click:hover .kind-icon { color: var(--accent); }
 .popover-title { margin-bottom: var(--sp-3); font-size: var(--fs-3); font-weight: 600; }
 .popover-sep { display: flex; align-items: center; gap: var(--sp-2); margin: var(--sp-4) 0; font-size: 11px; color: var(--muted); }
 .popover-sep::before, .popover-sep::after { content: ""; flex: 1; height: 1px; background: var(--hairline); }
+
+/* ------------------------------------------- rail collapse (user choice) */
+/* Desktop: the header of the main column carries a Filters toggle that
+   hides the rail entirely; the choice persists. Below 980px the rail is an
+   overlay and uses the .open state instead (see responsive section). */
+@media (min-width: 980px) {
+  body.rail-hidden .app-body { grid-template-columns: minmax(0, 1fr); }
+  body.rail-hidden .filter-rail { display: none; }
+}
 
 /* --------------------------------------------------------- responsive */
 @media (max-width: 979px) {

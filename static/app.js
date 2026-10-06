@@ -91,6 +91,44 @@
     return [PAL["--ser-1"], PAL["--ser-2"], PAL["--ser-3"], PAL["--ser-4"], PAL["--ser-5"], PAL["--ser-6"]];
   }
 
+  /* ------------------------------------------------------ ui preferences */
+  function currentTheme() {
+    return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  }
+
+  /* opts.persist: remember across visits; opts.rerender: rebuild the active
+     view so charts and legend swatches pick up the new palette values. */
+  function applyTheme(theme, opts) {
+    document.documentElement.setAttribute("data-theme", theme);
+    if (opts && opts.persist) {
+      try { localStorage.setItem("rat.theme", theme); } catch (e) { /* storage unavailable */ }
+    }
+    var btn = $("#themeToggle");
+    if (btn) {
+      btn.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
+      btn.setAttribute("title", theme === "dark" ? "Switch to light theme" : "Switch to dark theme");
+    }
+    readPalette();
+    if (opts && opts.rerender) loadTab({ silent: true });
+  }
+
+  function setRailHidden(hidden) {
+    state.railHidden = hidden;
+    document.body.classList.toggle("rail-hidden", hidden);
+    try { localStorage.setItem("rat.railHidden", hidden ? "1" : "0"); } catch (e) { /* storage unavailable */ }
+    updateRailToggle();
+    resizeCharts();
+  }
+
+  function updateRailToggle() {
+    var btn = $("#railToggle");
+    if (!btn) return;
+    var narrow = window.matchMedia("(max-width: 979px)").matches;
+    var visible = narrow ? $("#filterRail").classList.contains("open") : !state.railHidden;
+    btn.setAttribute("aria-expanded", visible ? "true" : "false");
+    btn.setAttribute("title", narrow ? "Toggle filters" : (state.railHidden ? "Show filter rail" : "Hide filter rail"));
+  }
+
   /* ---------------------------------------------------------------- api */
   function api(method, path, body) {
     var init = { method: method, headers: {} };
@@ -140,7 +178,8 @@
     job: null,
     jobPoll: null,
     openLayer: null,
-    booting: true /* first /api/repos fetch in flight - show skeletons, not the welcome flash */
+    booting: true, /* first /api/repos fetch in flight - show skeletons, not the welcome flash */
+    railHidden: false /* user collapsed the filter rail (remembered in localStorage) */
   };
 
   function filterQS(exceptHashes) {
@@ -781,20 +820,23 @@
   }
 
   /* ------------------------------------------------------ tab dispatch */
-  function loadTab() {
+  function loadTab(opts) {
+    var silent = !!(opts && opts.silent); /* re-render in place: keep old content until the new data arrives */
     var seq = ++state.renderSeq;
     disposeCharts();
     var host = $("#content");
-    clear(host);
     var banner = $("#bannerHost");
-    clear(banner);
+    if (!silent) {
+      clear(host);
+      clear(banner);
+    }
     if (!state.repoId) {
-      if (state.booting) { host.appendChild(skeletonView()); return; }
+      if (state.booting) { clear(host); host.appendChild(skeletonView()); return; }
       renderWelcome(); return;
     }
-    if (state.repo && state.repo.status === "running") { renderRunning(host); return; }
-    if (state.repo && state.repo.status === "error") { showRepoBanner(); renderRepoFailed(host); return; }
-    host.appendChild(skeletonView());
+    if (state.repo && state.repo.status === "running") { clear(host); renderRunning(host); return; }
+    if (state.repo && state.repo.status === "error") { showRepoBanner(); clear(host); renderRepoFailed(host); return; }
+    if (!silent) host.appendChild(skeletonView());
     if (state.tab === "overview") loadOverview(seq);
     else if (state.tab === "files") loadFiles(seq);
     else if (state.tab === "authors") loadAuthors(seq);
@@ -1062,6 +1104,12 @@
     Object.keys(state.charts).forEach(function (k) {
       try { state.charts[k].dispose(); } catch (e) { /* already detached */ }
       delete state.charts[k];
+    });
+  }
+
+  function resizeCharts() {
+    Object.keys(state.charts).forEach(function (k) {
+      if (state.charts[k]) state.charts[k].resize();
     });
   }
 
@@ -1886,7 +1934,11 @@
 
   /* ------------------------------------------------------------ startup */
   function init() {
-    readPalette();
+    applyTheme(currentTheme(), null); /* adopt the pre-paint theme and sync the toggle */
+    var savedRail = null;
+    try { savedRail = localStorage.getItem("rat.railHidden"); } catch (e) { /* storage unavailable */ }
+    if (savedRail === "1") setRailHidden(true);
+    updateRailToggle();
     var hashTab = (location.hash || "").replace("#", "");
     TABS.forEach(function (t) { if (t.id === hashTab) state.tab = hashTab; });
     renderTabs();
@@ -1902,10 +1954,16 @@
       ev.stopPropagation();
       loadSample();
     });
+    $("#themeToggle").addEventListener("click", function () {
+      applyTheme(currentTheme() === "dark" ? "light" : "dark", { persist: true, rerender: true });
+    });
     $("#railToggle").addEventListener("click", function () {
-      var rail = $("#filterRail");
-      var open = rail.classList.toggle("open");
-      $("#railToggle").setAttribute("aria-expanded", open ? "true" : "false");
+      if (window.matchMedia("(max-width: 979px)").matches) {
+        $("#filterRail").classList.toggle("open");
+        updateRailToggle();
+        return;
+      }
+      setRailHidden(!state.railHidden);
     });
 
     document.addEventListener("keydown", function (ev) {
@@ -1930,9 +1988,8 @@
       }
     });
     window.addEventListener("resize", debounce(function () {
-      Object.keys(state.charts).forEach(function (k) {
-        if (state.charts[k]) state.charts[k].resize();
-      });
+      resizeCharts();
+      updateRailToggle();
     }, 150));
 
     refreshRepos().catch(function (err) {
