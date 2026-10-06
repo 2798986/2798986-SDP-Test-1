@@ -27,6 +27,7 @@ STATIC_ROOT = (ROOT / "static").resolve()
 
 import db  # noqa: E402  (local modules, anchored to ROOT)
 import ingest  # noqa: E402
+import metrics  # noqa: E402
 
 MAX_UPLOAD_BYTES = 1 << 30  # 1 GiB
 
@@ -135,6 +136,44 @@ class RatHandler(BaseHTTPRequestHandler):
             if m:
                 self._send_latest_job(int(m.group(1)))
                 return
+            m = re.fullmatch(r"/api/repos/(\d+)/summary", path)
+            if m:
+                self._metrics(int(m.group(1)), qs, metrics.summary)
+                return
+            m = re.fullmatch(r"/api/repos/(\d+)/tree", path)
+            if m:
+                self._metrics(
+                    int(m.group(1)), qs,
+                    lambda conn, rid, f: metrics.tree(
+                        conn, rid, qs.get("path", [""])[0], f
+                    ),
+                )
+                return
+            m = re.fullmatch(r"/api/repos/(\d+)/file", path)
+            if m:
+                self._metrics(
+                    int(m.group(1)), qs,
+                    lambda conn, rid, f: metrics.file_detail(
+                        conn, rid, qs.get("path", [""])[0], f
+                    ),
+                )
+                return
+            m = re.fullmatch(r"/api/repos/(\d+)/authors", path)
+            if m:
+                self._metrics(int(m.group(1)), qs, metrics.authors_table)
+                return
+            m = re.fullmatch(r"/api/repos/(\d+)/commits", path)
+            if m:
+                self._commits(int(m.group(1)), qs)
+                return
+            m = re.fullmatch(r"/api/repos/(\d+)/chart", path)
+            if m:
+                ctype = qs.get("type", [""])[0]
+                self._metrics(
+                    int(m.group(1)), qs,
+                    lambda conn, rid, f: metrics.chart(conn, rid, ctype, f),
+                )
+                return
         if method == "POST":
             if path == "/api/repos":
                 self._create_repo_from_url()
@@ -145,12 +184,79 @@ class RatHandler(BaseHTTPRequestHandler):
             if path == "/api/repos/sample":
                 self._create_sample_repo()
                 return
+            m = re.fullmatch(r"/api/repos/(\d+)/authors/merge", path)
+            if m:
+                self._merge_authors(int(m.group(1)))
+                return
         if method == "DELETE":
             m = re.fullmatch(r"/api/repos/(\d+)", path)
             if m:
                 self._delete_repo(int(m.group(1)))
                 return
         raise ApiError(404, "Unknown endpoint: %s" % path)
+
+    # --------------------------------------------------------- metrics API
+    def _metrics(self, repo_id, qs, fn):
+        conn = db.connect()
+        try:
+            metrics.get_repo(conn, repo_id)
+            filters = metrics.parse_filters(qs)
+            self._send_json(fn(conn, repo_id, filters))
+        except metrics.NotFound as exc:
+            raise ApiError(404, str(exc))
+        except metrics.FilterError as exc:
+            raise ApiError(400, str(exc))
+        finally:
+            conn.close()
+
+    def _commits(self, repo_id, qs):
+        def limit_of(name, default, lo, hi):
+            raw = qs.get(name, [None])[0]
+            if raw in (None, ""):
+                return default
+            try:
+                value = int(raw)
+            except ValueError:
+                raise ApiError(400, "Invalid integer for %s" % name)
+            if not lo <= value <= hi:
+                raise ApiError(400, "Value for %s is out of range" % name)
+            return value
+
+        limit = limit_of("limit", 500, 1, 5000)
+        offset = limit_of("offset", 0, 0, 10 ** 9)
+        query = qs.get("query", [""])[0]
+        conn = db.connect()
+        try:
+            metrics.get_repo(conn, repo_id)
+            filters = metrics.parse_filters(qs)
+            self._send_json(
+                metrics.commits_list(conn, repo_id, filters, limit, offset, query)
+            )
+        except metrics.NotFound as exc:
+            raise ApiError(404, str(exc))
+        except metrics.FilterError as exc:
+            raise ApiError(400, str(exc))
+        finally:
+            conn.close()
+
+    def _merge_authors(self, repo_id):
+        data = self._read_json()
+        try:
+            canonical_id = int(data.get("canonical_id"))
+            merge_ids = [int(m) for m in data.get("merge_ids", [])]
+        except (TypeError, ValueError):
+            raise ApiError(400, "canonical_id and merge_ids must be integers")
+        conn = db.connect()
+        try:
+            metrics.get_repo(conn, repo_id)
+            merged = metrics.merge_authors(conn, repo_id, canonical_id, merge_ids)
+            self._send_json({"ok": True, "merged": merged})
+        except metrics.NotFound as exc:
+            raise ApiError(404, str(exc))
+        except metrics.FilterError as exc:
+            raise ApiError(400, str(exc))
+        finally:
+            conn.close()
 
     # ------------------------------------------------------------ repo API
     def _send_repos(self):

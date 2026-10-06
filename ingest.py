@@ -305,8 +305,10 @@ def read_history(repo_root, conn, repo_id, progress=None):
             proc.kill()
             proc.wait()
         proc.stdout.close()
+        stderr_raw = proc.stderr.read()
+        proc.stderr.close()
     if proc.returncode != 0:
-        stderr = proc.stderr.read().decode("utf-8", "replace").strip()
+        stderr = stderr_raw.decode("utf-8", "replace").strip()
         raise IngestError(stderr.splitlines()[-1] if stderr else "git log failed")
     if progress:
         progress(1.0, "Reading history - %d commits" % stats["commits"])
