@@ -268,7 +268,7 @@ class RatHandler(BaseHTTPRequestHandler):
                        r.created_at,
                        (SELECT COUNT(*) FROM commits c WHERE c.repo_id = r.id) AS commits,
                        (SELECT COUNT(DISTINCT f.path) FROM files f WHERE f.repo_id = r.id) AS files,
-                       (SELECT COUNT(*) FROM authors a WHERE a.repo_id = r.id) AS authors
+                       (SELECT COUNT(DISTINCT COALESCE(a.canonical_id, a.id)) FROM authors a WHERE a.repo_id = r.id) AS authors
                 FROM repos r ORDER BY r.id
                 """
             ).fetchall()
