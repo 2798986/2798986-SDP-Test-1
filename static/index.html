@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAT - Repo Analysis Tool</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand" title="Repo Analysis Tool">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 22 22" width="22" height="22">
+        <rect x="0.5" y="0.5" width="21" height="21" fill="none" stroke="currentColor"/>
+        <line x1="11" y1="3" x2="11" y2="8" stroke="currentColor"/>
+        <line x1="11" y1="14" x2="11" y2="19" stroke="currentColor"/>
+        <line x1="3" y1="11" x2="8" y2="11" stroke="currentColor"/>
+        <line x1="14" y1="11" x2="19" y2="11" stroke="currentColor"/>
+        <circle cx="11" cy="11" r="2" fill="none" stroke="currentColor"/>
+      </svg>
+    </span>
+    <span class="brand-text">
+      <strong>RAT</strong>
+      <em>Repo Analysis Tool</em>
+    </span>
+  </div>
+
+  <span class="header-divider" aria-hidden="true"></span>
+
+  <div id="repoSelector" class="repo-selector"></div>
+
+  <div class="header-spacer"></div>
+
+  <div id="jobArea" class="job-area" aria-live="polite"></div>
+
+  <div class="header-actions">
+    <button id="btnAddRepo" class="btn" type="button">Add repository</button>
+    <button id="btnLoadSample" class="btn btn-accent" type="button">Load sample</button>
+  </div>
+</header>
+
+<div class="app-body">
+  <aside id="filterRail" class="filter-rail" aria-label="Filters"></aside>
+
+  <main class="main">
+    <div class="tab-bar">
+      <button id="railToggle" class="rail-toggle" type="button" aria-expanded="false">Filters</button>
+      <nav id="tabs" class="tabs" role="tablist" aria-label="Views"></nav>
+      <div id="scopeLine" class="scope-line" aria-live="polite"></div>
+    </div>
+    <div id="bannerHost" class="banner-host"></div>
+    <section id="content" class="content" aria-live="polite"></section>
+  </main>
+</div>
+
+<div id="drawerHost"></div>
+<div id="popoverHost"></div>
+<div id="toastHost" class="toast-host" aria-live="polite"></div>
+
+<noscript>
+  <div class="noscript">RAT needs JavaScript enabled to render the dashboard.</div>
+</noscript>
+
+<script src="/static/vendor/echarts.min.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
